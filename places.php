@@ -25,21 +25,44 @@ $admin_username = "admin"; // Change to the actual admin username
 
 // Handle place actions
 if (isset($_POST['delete_place'])) {
-    $place_id = $_POST['place_id'];
-    $conn->query("DELETE FROM place_images WHERE place_id = $place_id");
-    $conn->query("DELETE FROM places WHERE id = $place_id");
-    logAction($conn, 'DELETE', 'places', $place_id, $admin_username);
+    $place_id = intval($_POST['place_id']); // ป้องกัน SQL Injection
+
+    // เริ่ม Transaction เพื่อให้แน่ใจว่าการลบทั้งหมดสำเร็จ
+    $conn->begin_transaction();
+
+    try {
+        // ลบข้อมูลที่เชื่อมโยงกันก่อน
+        $conn->query("DELETE FROM reviews WHERE place_id = $place_id");
+        $conn->query("DELETE FROM place_images WHERE place_id = $place_id");
+
+        // ลบ place
+        $conn->query("DELETE FROM places WHERE id = $place_id");
+
+        // บันทึกการกระทำ
+        logAction($conn, 'DELETE', 'places', $place_id, $admin_username);
+
+        // ยืนยันการลบ
+        $conn->commit();
+    } catch (Exception $e) {
+        // ถ้ามีข้อผิดพลาด ให้ยกเลิกการลบทั้งหมด
+        $conn->rollback();
+        echo "Error deleting place: " . $e->getMessage();
+    }
 }
 
+// Handle edit place
 if (isset($_POST['edit_place'])) {
-    $place_id = $_POST['place_id'];
-    $name = $_POST['name'];
-    $latitude = $_POST['latitude'];
-    $longitude = $_POST['longitude'];
-    $story = $_POST['story'];
+    $place_id = intval($_POST['place_id']); // ป้องกัน SQL Injection
+    $name = $conn->real_escape_string($_POST['name']);
+    $latitude = $conn->real_escape_string($_POST['latitude']);
+    $longitude = $conn->real_escape_string($_POST['longitude']);
+    $story = $conn->real_escape_string($_POST['story']);
+
     $conn->query("UPDATE places SET name = '$name', latitude = '$latitude', longitude = '$longitude', story = '$story' WHERE id = $place_id");
+
     logAction($conn, 'EDIT', 'places', $place_id, $admin_username);
 }
+
 
 // Fetch places
 $places = $conn->query("SELECT * FROM places");
