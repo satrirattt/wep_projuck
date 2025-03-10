@@ -155,7 +155,7 @@ session_destroy();
 <?php endif; ?>
 
         <form action="checkuser.php" method="post">
-            <p align="left" style="margin-bottom: 3px; font-size: 12px;">Username or Email</p>
+            <p align="left" style="margin-bottom: 3px; font-size: 12px;">Username</p>
             <input type="text" name="Username" required>
 
             <p align="left" style="margin-bottom: 3px; font-size: 12px;">Password</p>
